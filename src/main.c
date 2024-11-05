@@ -9,7 +9,7 @@
 
 triangle_t* triangles_to_render;
 
-vec3_t camera_position = { 0, 0, -2.5 };
+vec3_t camera_position = { 0, 0, 0 };
 
 bool is_running = false;
 int previous_frame_time = 0;
@@ -27,7 +27,7 @@ void setup(void) {
         window_height
     );
 
-    load_obj_file_data("./assets/f22.obj");
+    load_obj_file_data("./assets/cube.obj");
 }
 
 void process_input(void) {
@@ -57,7 +57,7 @@ vec2_t project (vec3_t point) {
 void update(void) {
     int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
 
-    if (time_to_wait > 0) {
+    if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
         SDL_Delay(time_to_wait);
     }
     
@@ -69,7 +69,6 @@ void update(void) {
     mesh.rotation.y += 0.01;
     mesh.rotation.z += 0.01;
 
-    triangle_t projected_triangle;
     for (int i = 0; i < array_length(mesh.faces); i++) {
         face_t mesh_face = mesh.faces[i];
 
@@ -78,6 +77,8 @@ void update(void) {
         face_vertices[1] = mesh.vertices[mesh_face.b - 1];
         face_vertices[2] = mesh.vertices[mesh_face.c - 1];
 
+        vec3_t transformed_vertices[3];
+
         for (int j = 0; j < 3; j++) {
             vec3_t transformed_vertex = face_vertices[j];
 
@@ -85,9 +86,32 @@ void update(void) {
             transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
             transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
-            transformed_vertex.z -= camera_position.z;
+            transformed_vertex.z += 2.5;
 
-            vec2_t projected_point = project(transformed_vertex);
+            transformed_vertices[j] = transformed_vertex;
+        }
+
+        vec3_t vec_a = transformed_vertices[0];
+        vec3_t vec_b = transformed_vertices[1];
+        vec3_t vec_c = transformed_vertices[2];
+
+        vec3_t vec_ab = vec3_subtract(vec_b, vec_a);
+        vec3_t vec_ac = vec3_subtract(vec_c, vec_a);
+
+        vec3_t normal = vec3_cross(vec_ab, vec_ac);
+
+        vec3_t camera_ray = vec3_subtract(camera_position, vec_a);
+
+        float alignment = vec3_dot(normal, camera_ray);
+
+        if (alignment < 0) {
+            continue;
+        }
+
+        triangle_t projected_triangle;
+
+        for (int j = 0; j < 3; j++) {
+            vec2_t projected_point = project(transformed_vertices[j]);
             projected_point.x += (window_width / 2);
             projected_point.y += (window_height / 2);
 

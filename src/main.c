@@ -96,9 +96,14 @@ void update(void) {
         vec3_t vec_c = transformed_vertices[2];
 
         vec3_t vec_ab = vec3_subtract(vec_b, vec_a);
+        vec3_normalize(&vec_ab);
         vec3_t vec_ac = vec3_subtract(vec_c, vec_a);
+        vec3_normalize(&vec_ac);
 
         vec3_t normal = vec3_cross(vec_ab, vec_ac);
+
+        // Normalize the face normal vector
+        vec3_normalize(&normal);
 
         vec3_t camera_ray = vec3_subtract(camera_position, vec_a);
 
@@ -142,6 +147,8 @@ void render(void) {
             triangle.points[2].y,
             0xFFFFAAAA
         );
+
+        
     }
 
     array_free(triangles_to_render);
